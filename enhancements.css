@@ -1,0 +1,127 @@
+.summary-tools {
+  grid-template-columns: auto auto minmax(220px, 1fr) repeat(3, minmax(120px, auto)) repeat(3, auto);
+}
+
+.project-card-body-compact {
+  gap: 8px;
+}
+
+.project-day-list-compact {
+  margin-top: 0;
+  gap: 0;
+}
+
+.project-line-head {
+  display: grid;
+  grid-template-columns: 104px minmax(0, 1fr) 88px 72px;
+  gap: 10px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--line);
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.project-line {
+  display: grid;
+  grid-template-columns: 104px minmax(0, 1fr) 88px 72px;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0;
+  border-top: 1px dashed var(--line);
+}
+
+.project-line:first-child {
+  padding-top: 8px;
+}
+
+.project-line-title {
+  min-width: 0;
+}
+
+.project-line-date {
+  font-size: 12px;
+  color: #4b5563;
+  white-space: nowrap;
+}
+
+.project-line-date.blank {
+  color: transparent;
+}
+
+.project-line-status,
+.project-line-priority {
+  font-size: 12px;
+  white-space: nowrap;
+  text-align: right;
+}
+
+.project-line-status {
+  color: #374151;
+}
+
+.project-line-priority {
+  color: #6b7280;
+}
+
+.project-line-overdue {
+  color: var(--red);
+  font-weight: 700;
+}
+
+.export-card {
+  width: min(520px, 100%);
+}
+
+.export-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+#integration-skill-link,
+#integration-mcp-link {
+  min-height: 116px;
+  font-size: 12px;
+  line-height: 1.55;
+  white-space: pre-wrap;
+}
+
+#unified-import-btn,
+#unified-export-btn {
+  color: #111827;
+}
+
+@media (max-width: 1080px) {
+  .project-line-head,
+  .project-line {
+    grid-template-columns: 88px minmax(0, 1fr) 76px 64px;
+  }
+}
+
+@media (max-width: 760px) {
+  .project-line-head {
+    display: none;
+  }
+
+  .project-line {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+
+  .project-line-date.blank {
+    display: none;
+  }
+
+  .project-line-status,
+  .project-line-priority {
+    text-align: left;
+  }
+
+  .export-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .settings-card textarea {
+    min-height: 110px;
+  }
+}

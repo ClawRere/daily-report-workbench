@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>日报记录台</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="./styles.css" />
+  <link rel="stylesheet" href="./enhancements.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="brand">日报记录台</div>
+      <nav class="view-nav" id="view-nav" aria-label="页面切换">
+        <button type="button" class="nav-btn active" data-view="today">今日页</button>
+        <button type="button" class="nav-btn" data-view="summary">汇总页</button>
+      </nav>
+      <div class="top-actions">
+        <button type="button" class="text-btn" id="open-settings-btn">设置</button>
+        <button type="button" class="text-btn" id="unified-import-btn">导入</button>
+        <button type="button" class="text-btn" id="unified-export-btn">导出</button>
+        <input type="file" id="import-any-input" accept=".json,.xlsx,.xls" hidden />
+      </div>
+    </header>
+
+    <section class="calendar-card" id="calendar-card">
+      <div class="calendar-top">
+        <div class="calendar-title-wrap">
+          <div class="calendar-title" id="calendar-title"></div>
+          <div class="calendar-legend">颜色：绿色已完成，黄色当日新增未完成，浅红色当前逾期；右下角：当前逾期/完成/逾期完成/新增</div>
+        </div>
+        <div class="calendar-actions">
+          <button type="button" class="mini-btn icon-mini-btn" id="calendar-prev-btn" aria-label="上一页">&lt;</button>
+          <button type="button" class="mini-btn hidden" id="calendar-prev-month-btn">上一月</button>
+          <button type="button" class="mini-btn" id="calendar-today-btn">今天</button>
+          <button type="button" class="mini-btn hidden" id="calendar-next-month-btn">下一月</button>
+          <button type="button" class="mini-btn icon-mini-btn" id="calendar-next-btn" aria-label="下一页">&gt;</button>
+          <button type="button" class="mini-btn" id="calendar-toggle-btn">展开日历</button>
+        </div>
+      </div>
+      <div class="calendar-grid collapsed" id="calendar-grid"></div>
+    </section>
+
+    <main>
+      <section id="today-view" class="view-panel">
+        <div class="today-head">
+          <h2 id="today-title">今日记录</h2>
+          <div class="today-stats" id="today-stats"></div>
+        </div>
+
+        <div class="today-columns">
+          <section class="compact-card">
+            <div class="section-head">
+              <h3>待办 / 跟进中</h3>
+            </div>
+            <div class="task-list" id="todo-list"></div>
+          </section>
+          <section class="compact-card">
+            <div class="section-head">
+              <h3>已完成</h3>
+            </div>
+            <div class="task-list" id="done-list"></div>
+          </section>
+        </div>
+      </section>
+
+      <section id="summary-view" class="view-panel hidden">
+        <div class="summary-tools">
+          <div class="seg" id="scope-seg"></div>
+          <div class="seg" id="summary-mode-seg"></div>
+          <input type="search" id="search-input" placeholder="搜索项目 / 任务 / 备注" />
+          <select id="project-filter"></select>
+          <select id="status-filter"></select>
+          <select id="priority-filter"></select>
+          <button type="button" class="mini-btn" id="generate-summary-btn">生成摘要</button>
+          <button type="button" class="mini-btn" id="ai-summary-btn">AI总结</button>
+          <button type="button" class="mini-btn" id="ppt-prompt-btn">PPT提示词</button>
+        </div>
+
+        <textarea id="summary-output" rows="3" class="summary-output" placeholder="这里显示当前汇总范围的摘要"></textarea>
+        <div class="today-stats" id="summary-stats"></div>
+        <div class="project-summary hidden" id="project-summary"></div>
+        <div class="timeline" id="timeline-root"></div>
+      </section>
+    </main>
+  </div>
+
+  <button type="button" class="fab-btn" id="open-entry-btn" aria-label="新增任务">+</button>
+
+  <div class="modal-overlay hidden" id="entry-modal">
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="entry-modal-title">
+      <div class="modal-head">
+        <div>
+          <h3 id="entry-modal-title">新增任务 / 补录</h3>
+          <div class="modal-subtitle" id="entry-modal-subtitle">支持一句话录入、按规则批量写入，也支持逐项填写</div>
+        </div>
+        <button type="button" class="icon-btn" id="close-entry-btn" aria-label="关闭">×</button>
+      </div>
+
+      <div class="modal-body">
+        <section class="modal-section">
+          <div class="section-title">一句话录入</div>
+          <div class="quick-row">
+            <input id="quick-line-input" type="text" placeholder="示例：今天 POPEYES 数据核对 已完成 高" />
+            <button type="button" class="mini-btn" id="quick-line-btn">解析到表单</button>
+            <button type="button" class="mini-btn" id="quick-save-btn">直接写入</button>
+            <button type="button" class="mini-btn primary" id="quick-ai-btn">AI 解析</button>
+          </div>
+        </section>
+
+        <section class="modal-section">
+          <div class="section-title">按规则批量写入</div>
+          <textarea id="batch-input" rows="10" placeholder="支持两种常用格式：&#10;1. 每行一条：今天 欧派 已完成 问题处理 高&#10;2. 日期 + 编号列表：&#10;2026/6/4&#10;1、欧派项目反馈问题处理；&#10;2、德克士投放配置需求PRD更新；"></textarea>
+          <div class="batch-actions">
+            <button type="button" class="mini-btn" id="batch-local-btn">按规则写入</button>
+            <button type="button" class="mini-btn primary" id="batch-ai-btn">AI 批量写入</button>
+          </div>
+        </section>
+
+        <section class="modal-section">
+          <div class="section-title">字段录入</div>
+          <form id="task-form" class="entry-form">
+            <input type="date" id="task-date" title="录入日期" required />
+            <input type="date" id="task-due-date" title="计划完成日期" />
+            <input type="date" id="task-completed-date" title="实际完成日期" />
+            <input type="text" id="task-project" list="project-suggestions" placeholder="项目" required />
+            <input type="text" id="task-title" placeholder="任务事项" required />
+            <select id="task-status"></select>
+            <select id="task-priority"></select>
+            <select id="task-category"></select>
+            <input type="text" id="task-plan" placeholder="计划说明（可选）" />
+            <input type="text" id="task-notes" placeholder="备注（可选）" />
+            <div class="entry-actions">
+              <button type="button" class="mini-btn" id="reset-form-btn">清空</button>
+              <button type="submit" class="mini-btn primary" id="submit-task-btn">保存记录</button>
+            </div>
+          </form>
+        </section>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay hidden" id="settings-modal">
+    <div class="modal-card settings-card" role="dialog" aria-modal="true" aria-labelledby="settings-title">
+      <div class="modal-head">
+        <div>
+          <h3 id="settings-title">设置</h3>
+          <div class="modal-subtitle">配置自动录入 Prompt、自定义大模型、以及 Codex/QClaw 接入方式</div>
+        </div>
+        <button type="button" class="icon-btn" id="close-settings-btn" aria-label="关闭">×</button>
+      </div>
+
+      <div class="modal-body settings-body">
+        <section class="modal-section">
+          <div class="section-title">模型配置</div>
+          <div class="settings-form">
+            <input type="text" id="settings-base-url" placeholder="base_url，例如 https://api.openai.com/v1" />
+            <input type="password" id="settings-api-key" placeholder="api_key" />
+            <input type="text" id="settings-model" placeholder="model，例如 gpt-4.1-mini" />
+            <input type="number" id="settings-temperature" min="0" max="2" step="0.1" placeholder="temperature，默认 0.2" />
+          </div>
+          <div class="settings-note">按 OpenAI 兼容接口调用：POST /chat/completions</div>
+        </section>
+
+        <section class="modal-section">
+          <div class="section-title">自动录入 Prompt</div>
+          <textarea id="settings-prompt" rows="12" placeholder="这里填写规范化输入 Prompt"></textarea>
+          <div class="batch-actions">
+            <button type="button" class="mini-btn" id="copy-prompt-btn">复制 Prompt</button>
+            <button type="button" class="mini-btn" id="test-model-btn">测试模型</button>
+            <button type="button" class="mini-btn primary" id="save-settings-btn">保存设置</button>
+          </div>
+        </section>
+
+        <section class="modal-section">
+          <div class="section-title">Codex / QClaw 接入</div>
+          <textarea id="integration-skill-link" rows="5" readonly placeholder="这里显示 skill 使用说明"></textarea>
+          <textarea id="integration-mcp-link" rows="5" readonly placeholder="这里显示 MCP 写入规范"></textarea>
+          <div class="batch-actions">
+            <button type="button" class="mini-btn" id="copy-skill-link-btn">复制 Skill 说明</button>
+            <button type="button" class="mini-btn" id="copy-mcp-link-btn">复制 MCP 规范</button>
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay hidden" id="export-modal">
+    <div class="modal-card export-card" role="dialog" aria-modal="true" aria-labelledby="export-title">
+      <div class="modal-head">
+        <div>
+          <h3 id="export-title">选择导出格式</h3>
+          <div class="modal-subtitle">支持导出为 JSON 或 Excel</div>
+        </div>
+        <button type="button" class="icon-btn" id="close-export-btn" aria-label="关闭">×</button>
+      </div>
+      <div class="modal-body export-actions">
+        <button type="button" class="mini-btn" id="export-json-direct-btn">导出 JSON</button>
+        <button type="button" class="mini-btn primary" id="export-excel-direct-btn">导出 Excel</button>
+      </div>
+    </div>
+  </div>
+
+  <datalist id="project-suggestions"></datalist>
+  <div class="toast hidden" id="toast"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="./data/seed-data.js"></script>
+  <script src="./data/live-data.js"></script>
+  <script src="./live-sync.js"></script>
+  <script src="./bridge.js"></script>
+  <script src="./app.js"></script>
+  <script src="./enhancements.js"></script>
+  <script src="./enhancements-v2.js"></script>
+</body>
+</html>
