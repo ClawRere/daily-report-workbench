@@ -1059,3 +1059,151 @@ button:focus {
     bottom: 84px;
   }
 }
+
+.stats-bar {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 4px 12px;
+  border-radius: 12px;
+  background: var(--accent-soft);
+  font-size: 12px;
+  color: var(--muted);
+}
+.stats-bar .stats-item {
+  padding: 2px 8px;
+  border-right: 1px solid var(--line);
+}
+.stats-bar .stats-item:last-child {
+  border-right: none;
+}
+.stats-bar .stats-item-alert {
+  color: var(--red);
+}
+/* ===== Animations & Micro-interactions ===== */
+@media (prefers-reduced-motion: no-preference) {
+
+  /* View panel transitions */
+  .view-panel {
+    transition: opacity 0.18s ease;
+  }
+  .view-panel.hidden {
+    opacity: 0;
+  }
+
+  /* Task cards stagger reveal */
+  .task-card {
+    animation: card-in 0.22s ease both;
+  }
+  @keyframes card-in {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Stat bar pulse on update */
+  .stats-bar {
+    animation: stats-fade 0.28s ease;
+  }
+  @keyframes stats-fade {
+    from { opacity: 0.5; }
+    to   { opacity: 1; }
+  }
+
+  /* Badge hover lift */
+  .badge:hover {
+    transform: translateY(-1px);
+    transition: transform 0.12s ease;
+  }
+
+  /* Button hover glow */
+  .mini-btn:hover:not(.danger-lite) {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(17,24,39,0.08);
+    transition: all 0.14s ease;
+  }
+  .mini-btn.danger-lite:hover {
+    transform: translateY(-1px);
+    transition: all 0.14s ease;
+  }
+
+  /* FAB hover scale */
+  .fab-btn:hover {
+    transform: scale(1.08);
+    transition: transform 0.16s ease;
+  }
+
+  /* Calendar cell hover */
+  .calendar-cell:not(.empty):hover {
+    transform: scale(1.04);
+    transition: transform 0.12s ease;
+    z-index: 2;
+  }
+
+  /* Project card hover */
+  .project-card:hover {
+    box-shadow: 0 8px 24px rgba(15,23,42,0.12);
+    transition: box-shadow 0.2s ease;
+  }
+
+  /* Modal entrance */
+  .modal-card {
+    animation: modal-pop 0.2s ease;
+  }
+  @keyframes modal-pop {
+    from { opacity: 0; transform: scale(0.97) translateY(8px); }
+    to   { opacity: 1; transform: scale(1) translateY(0); }
+  }
+
+  /* Nav button hover underline */
+  .nav-btn::after {
+    content: "";
+    display: block;
+    width: 0;
+    height: 2px;
+    border-radius: 1px;
+    background: var(--accent);
+    transition: width 0.2s ease;
+    margin-top: 2px;
+  }
+  .nav-btn:hover::after,
+  .nav-btn.active::after {
+    width: 100%;
+  }
+
+  /* Toast slide */
+  .toast:not(.hidden) {
+    animation: toast-slide 0.22s ease;
+  }
+  @keyframes toast-slide {
+    from { opacity: 0; transform: translateY(-8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Seg button hover */
+  .seg-btn:hover {
+    transition: all 0.12s ease;
+  }
+
+  /* Plan group hover */
+  .plan-group:hover {
+    box-shadow: 0 4px 16px rgba(15,23,42,0.06);
+    transition: box-shadow 0.2s ease;
+  }
+
+  /* Text input focus ring */
+  input:focus, textarea:focus, select:focus {
+    transition: outline-color 0.15s ease;
+  }
+
+  /* Scroll-top rocket bounce */
+  #scroll-top-btn:not(.hidden):hover {
+    animation: rocket-bounce 0.4s ease;
+  }
+  @keyframes rocket-bounce {
+    0%   { transform: translateY(0); }
+    30%  { transform: translateY(-6px); }
+    50%  { transform: translateY(0); }
+    70%  { transform: translateY(-3px); }
+    100% { transform: translateY(0); }
+  }
+}

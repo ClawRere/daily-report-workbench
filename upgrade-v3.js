@@ -1072,7 +1072,6 @@
     const settings = readCombinedSettings();
     const tasks = readTasks();
     let count = 0;
-
     const next = tasks.map((task) => {
       if (normalizeDate(task.completedDate || "") !== displayDate || task.status !== "done") return task;
       count += 1;
@@ -1083,12 +1082,10 @@
         updatedAt: new Date().toISOString()
       };
     });
-
     if (!count) {
-      showToast("本日没有可恢复的完成任务");
+      showToast("选中日期没有可恢复的完成任务");
       return;
     }
-
     writeTasks(next);
     showToast(`已恢复 ${count} 条任务`);
     dispatchRefresh();
@@ -1100,16 +1097,20 @@
     const tasks = readTasks();
     let count = 0;
     const next = tasks.map((task) => {
-      if (!(task.status === "done" && normalizeDate(task.completedDate || "") === displayDate)) return task;
+      if (task.status === "deleted") return task;
+      const taskDate = normalizeDate(task.date || "");
+      const completedDate = normalizeDate(task.completedDate || "");
+      const isRelevant = taskDate === displayDate || completedDate === displayDate;
+      if (!isRelevant) return task;
       count += 1;
       return { ...task, status: "deleted", updatedAt: new Date().toISOString() };
     });
     if (!count) {
-      showToast("本日没有可清除的完成任务");
+      showToast("选中日期没有可清除的任务");
       return;
     }
     writeTasks(next);
-    showToast(`已清除 ${count} 条完成记录（可从设置恢复）`);
+    showToast(`已清除 ${count} 条任务（可从设置恢复）`);
     dispatchRefresh();
   }
 
