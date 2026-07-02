@@ -258,4 +258,18 @@
 }
 .sample-hero {
   position: relative;
+}.project-check-all {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+}
+.project-check-all-input {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+.project-manager select {
+  width: auto;
+  min-width: 120px;
 }

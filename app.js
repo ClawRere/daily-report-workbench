@@ -208,7 +208,7 @@ function setupStaticOptions() {
 }
 
 
-  window.addEventListener("daily-report-refresh", () => { hydrate(); render(); });
+  window.addEventListener("daily-report-refresh", () => { state.tasks = sortTasks((readStoredAppData()?.tasks || []).map(normalizeTask)); render(); });
 function bindEvents() {
   els.viewNav.addEventListener("click", handleViewSwitch);
   els.calendarPrevBtn.addEventListener("click", () => shiftCalendar(-1));

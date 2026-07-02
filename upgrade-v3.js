@@ -825,7 +825,10 @@
       return `
         <article class="project-card">
           <div class="project-card-head">
-            <div class="project-name">${escapeHtml(group.project)}</div>
+            <label class="project-check-all">
+              <input type="checkbox" class="project-check-all-input" data-project="${escapeHtml(group.project)}" />
+              <span class="project-name">${escapeHtml(group.project)}</span>
+            </label>
             <div class="project-stats">${renderTaskStatsChips(group.stats, true)}</div>
           </div>
           <div class="project-card-body project-card-body-compact">
@@ -1068,49 +1071,65 @@
 
   function restoreDayDone() {
     const appState = readAppState();
-    const displayDate = normalizeDate(appState?.focusDate || todayStr());
+    const scope = normalizeText(appState?.scope) || "day";
+    const focusDate = normalizeDate(appState?.focusDate || todayStr());
+    const range = getScopeRange(scope, focusDate);
     const settings = readCombinedSettings();
     const tasks = readTasks();
     let count = 0;
     const next = tasks.map((task) => {
-      if (normalizeDate(task.completedDate || "") !== displayDate || task.status !== "done") return task;
+      if (task.status !== "done") return task;
+      const taskDate = normalizeDate(task.date || "");
+      const completedDate = normalizeDate(task.completedDate || "");
+      const relevantDate = completedDate || taskDate;
+      let inRange = false;
+      if (scope === "day") inRange = relevantDate === range.start;
+      else if (scope === "month") inRange = relevantDate.slice(0, 7) === range.start.slice(0, 7);
+      else if (scope === "quarter") inRange = getQuarterKey(relevantDate) === getQuarterKey(range.start);
+      else inRange = relevantDate.slice(0, 4) === range.start.slice(0, 4);
+      if (!inRange) return task;
       count += 1;
       return {
         ...task,
-        status: task.date > todayStr() ? "planned" : (settings.defaultTaskStatus === "done" ? "pending" : settings.defaultTaskStatus),
+        status: "pending",
         completedDate: "",
         updatedAt: new Date().toISOString()
       };
     });
     if (!count) {
-      showToast("选中日期没有可恢复的完成任务");
+      showToast(`${range.label}没有可恢复的完成任务`);
       return;
     }
     writeTasks(next);
-    showToast(`已恢复 ${count} 条任务`);
+    showToast(`已恢复 ${range.label} ${count} 条任务为待办`);
     dispatchRefresh();
   }
 
   function clearDayDone() {
     const appState = readAppState();
-    const displayDate = normalizeDate(appState?.focusDate || todayStr());
+    const scope = normalizeText(appState?.scope) || "day";
+    const focusDate = normalizeDate(appState?.focusDate || todayStr());
+    const range = getScopeRange(scope, focusDate);
     const tasks = readTasks();
     let count = 0;
     const next = tasks.map((task) => {
       if (task.status === "deleted") return task;
       const taskDate = normalizeDate(task.date || "");
-      const completedDate = normalizeDate(task.completedDate || "");
-      const isRelevant = taskDate === displayDate || completedDate === displayDate;
-      if (!isRelevant) return task;
+      let inRange = false;
+      if (scope === "day") inRange = taskDate === range.start;
+      else if (scope === "month") inRange = taskDate.slice(0, 7) === range.start.slice(0, 7);
+      else if (scope === "quarter") inRange = getQuarterKey(taskDate) === getQuarterKey(range.start);
+      else inRange = taskDate.slice(0, 4) === range.start.slice(0, 4);
+      if (!inRange) return task;
       count += 1;
       return { ...task, status: "deleted", updatedAt: new Date().toISOString() };
     });
     if (!count) {
-      showToast("选中日期没有可清除的任务");
+      showToast(`${range.label}没有可清除的任务`);
       return;
     }
     writeTasks(next);
-    showToast(`已清除 ${count} 条任务（可从设置恢复）`);
+    showToast(`已清除 ${range.label} ${count} 条任务`);
     dispatchRefresh();
   }
 
@@ -1139,12 +1158,38 @@
     dispatchRefresh();
   }
 
+  function batchRestoreDeleted() {
+    const appState = readAppState();
+    const scope = normalizeText(appState?.scope) || "day";
+    const focusDate = normalizeDate(appState?.focusDate || todayStr());
+    const range = getScopeRange(scope, focusDate);
+    const tasks = readTasks();
+    let count = 0;
+    const next = tasks.map((task) => {
+      if (task.status !== "deleted") return task;
+      const taskDate = normalizeDate(task.date || "");
+      let inRange = false;
+      if (scope === "day") inRange = taskDate === range.start;
+      else if (scope === "month") inRange = taskDate.slice(0, 7) === range.start.slice(0, 7);
+      else if (scope === "quarter") inRange = getQuarterKey(taskDate) === getQuarterKey(range.start);
+      else inRange = taskDate.slice(0, 4) === range.start.slice(0, 4);
+      if (!inRange) return task;
+      count += 1;
+      return { ...task, status: "pending", completedDate: "", updatedAt: new Date().toISOString() };
+    });
+    if (!count) { showToast("当前范围内没有已删除的任务"); return; }
+    writeTasks(next);
+    showToast(`已恢复 ${count} 条任务为待办`);
+    dispatchRefresh();
+  }
+
   function applyProjectBulkRename() {
-    const input = document.getElementById("project-bulk-input");
-    const project = normalizeText(input?.value);
+    const selectEl = document.getElementById("project-bulk-select");
+    const inputEl = document.getElementById("project-bulk-input");
+    const project = normalizeText(selectEl?.value) || normalizeText(inputEl?.value);
     const selectedIds = new Set(readUpgrade().selectedProjectTaskIds || []);
     if (!project) {
-      showToast("请先输入新的项目名称");
+      showToast("请先选择或输入目标项目名称");
       return;
     }
     if (!selectedIds.size) {
@@ -1160,20 +1205,8 @@
     });
     writeTasks(next);
     writeUpgrade({ selectedProjectTaskIds: [] });
-    showToast(`已更新 ${count} 条任务归属`);
+    showToast(`已更新 ${count} 条任务归属为「${project}」`);
     dispatchRefresh();
-  }
-  function saveModelSettings() {
-    const patch = {
-      baseUrl: normalizeText(document.getElementById("settings-base-url")?.value) || DEFAULT_SETTINGS.baseUrl,
-      apiKey: normalizeText(document.getElementById("settings-api-key")?.value),
-      model: normalizeText(document.getElementById("settings-model")?.value) || DEFAULT_SETTINGS.model,
-      temperature: clampNumber(Number(document.getElementById("settings-temperature")?.value), 0, 2, DEFAULT_SETTINGS.temperature)
-    };
-    writeSplitSettings(MODEL_SETTINGS_KEY, patch);
-    writeCombinedSettings(patch);
-    refreshIntegrationDocs();
-    showToast("模型设置已保存");
   }
 
   function savePromptSettings() {
@@ -1232,6 +1265,19 @@
     writeJson(key, { ...(readJson(key) || {}), ...patch });
   }
 
+  function fillProjectBulkSelect() {
+    const selectEl = document.getElementById("project-bulk-select");
+    if (!selectEl) return;
+    const tasks = readTasks();
+    const projects = [...new Set(tasks.filter(t => t.status !== "deleted").map(t => t.project).filter(Boolean))].sort();
+    const currentVal = selectEl.value;
+    selectEl.innerHTML = '<option value="">选择目标项目</option>' + projects.map(p => `<option value="${escapeHtml(p)}"${p === currentVal ? ' selected' : ''}>${escapeHtml(p)}</option>`).join("");
+  }
+
+  function renderTaskStatsChips(stats, includeProjects) {
+    if (typeof window.renderStatsChips === "function") return window.renderStatsChips(stats, includeProjects);
+    return "";
+  }
   function refreshIntegrationDocs() {
     if (typeof window.__refreshIntegrationDocs === "function") {
       window.__refreshIntegrationDocs();

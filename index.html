@@ -74,9 +74,10 @@
           <h2 id="today-title">今日记录</h2>
           <div class="today-stats" id="today-stats"></div>
           <div class="today-head-actions">
-            <button type="button" class="mini-btn" id="undo-submit-btn">撤回上次新增</button>
-            <button type="button" class="mini-btn" id="restore-day-done-btn">恢复选中日期完成</button>
-            <button type="button" class="mini-btn danger-lite" id="clear-day-done-btn">清除选中日期</button>
+            <button type="button" class="mini-btn" id="undo-submit-btn">撤回新增</button>
+            <button type="button" class="mini-btn" id="restore-day-done-btn">恢复待办</button>
+            <button type="button" class="mini-btn danger-lite" id="clear-day-done-btn">批量删除</button>
+            <button type="button" class="mini-btn" id="batch-restore-btn">批量恢复</button>
           </div>
         </div>
 
@@ -113,7 +114,8 @@
         <div class="today-stats" id="summary-stats"></div>
         <div class="project-manager hidden" id="project-manager">
           <div class="project-manager-title">按项目维护</div>
-          <input type="text" id="project-bulk-input" placeholder="输入新的项目名称" />
+          <select id="project-bulk-select"><option value="">选择目标项目</option></select>
+          <input type="text" id="project-bulk-input" placeholder="或输入新项目名称" />
           <button type="button" class="mini-btn" id="project-bulk-apply-btn">批量改归属</button>
           <button type="button" class="mini-btn" id="project-bulk-clear-btn">清空选择</button>
         </div>
