@@ -207,6 +207,8 @@ function setupStaticOptions() {
   resetForm();
 }
 
+
+  window.addEventListener("daily-report-refresh", () => { hydrate(); render(); });
 function bindEvents() {
   els.viewNav.addEventListener("click", handleViewSwitch);
   els.calendarPrevBtn.addEventListener("click", () => shiftCalendar(-1));
@@ -761,10 +763,11 @@ function renderTaskDates(task) {
 }
 
 function renderTaskNote(task) {
+  const nl2br = (text) => escapeHtml(text).replace(/\\n/g, "<br>");
   const parts = [];
-  if (task.plan) parts.push(`计划：${escapeHtml(task.plan)}`);
-  if (task.notes) parts.push(`备注：${escapeHtml(task.notes)}`);
-  return parts.length ? `<div class="task-note">${parts.join(" · ")}</div>` : "";
+  if (task.plan) parts.push(`计划：${nl2br(task.plan)}`);
+  if (task.notes) parts.push(`备注：${nl2br(task.notes)}`);
+  return parts.length ? `<div class="task-note">${parts.join("<br>")}</div>` : "";
 }
 
 function buildTaskActions(task) {
@@ -1320,6 +1323,7 @@ function getVisibleBucketsForDate(dateKey) {
 
   state.tasks.forEach((task) => {
     const phase = taskStateOnDate(task, dateKey);
+    if (task.status === "deleted") return;
     if (phase === "done") done.push(task);
     if (phase === "active") active.push(task);
   });

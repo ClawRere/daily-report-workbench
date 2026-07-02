@@ -238,3 +238,24 @@
   color: var(--muted);
   margin-right: 4px;
 }
+.sample-hero-close {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(17, 24, 39, 0.08);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  color: var(--muted);
+}
+.sample-hero-close:hover {
+  background: rgba(17, 24, 39, 0.15);
+  color: var(--text);
+}
+.sample-hero {
+  position: relative;
+}

@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8" />
@@ -44,6 +44,7 @@
     </header>
 
     <section class="sample-hero" id="sample-hero">
+      <button type="button" class="sample-hero-close" id="close-sample-hero-btn" aria-label="关闭">&times;</button>
       <div class="sample-hero-badge" id="sample-hero-badge">公开样例</div>
       <h1 class="sample-hero-title" id="sample-hero-title">可直接复制部署的日报模板</h1>
       <p class="sample-hero-text" id="sample-hero-text">这里展示的是脱敏样例数据，方便公开预览、复制仓库和验证功能；真实工作记录建议复制后单独部署私人版。</p>
@@ -271,6 +272,14 @@
           <div class="batch-actions">
             <button type="button" class="mini-btn" id="save-access-settings-btn">保存访问控制</button>
           </div>
+        </section>
+        <section class="modal-section">
+          <div class="section-title">数据管理</div>
+          <div class="batch-actions">
+            <button type="button" class="mini-btn" id="restore-deleted-btn">恢复已删除任务</button>
+            <button type="button" class="mini-btn danger-lite" id="purge-deleted-btn">永久清除已删除</button>
+          </div>
+          <div class="settings-note">清除本日完成仅标记为"已删除"，可在此恢复或永久清除。</div>
         </section>
 
         <section class="modal-section">

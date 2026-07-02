@@ -49,6 +49,10 @@
   let bound = false;
   let scheduled = false;
 
+
+  function dispatchRefresh() {
+    window.dispatchEvent(new CustomEvent("daily-report-refresh"));
+  }
   function init() {
     if (bound) return;
     bound = true;
@@ -153,6 +157,20 @@
       return;
     }
 
+
+    if (id === "restore-deleted-btn") {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      restoreDeletedTasks();
+      return;
+    }
+
+    if (id === "purge-deleted-btn") {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      purgeDeletedTasks();
+      return;
+    }
     if (id === "project-bulk-clear-btn") {
       event.preventDefault();
       event.stopImmediatePropagation();
@@ -1045,7 +1063,7 @@
 
     writeUpgrade({ lastSubmission: null });
     showToast("已撤回本次新增");
-    window.location.reload();
+    dispatchRefresh();
   }
 
   function restoreDayDone() {
@@ -1073,22 +1091,51 @@
 
     writeTasks(next);
     showToast(`已恢复 ${count} 条任务`);
-    window.location.reload();
+    dispatchRefresh();
   }
 
   function clearDayDone() {
     const appState = readAppState();
     const displayDate = normalizeDate(appState?.focusDate || todayStr());
     const tasks = readTasks();
-    const next = tasks.filter((task) => !(task.status === "done" && normalizeDate(task.completedDate || "") === displayDate));
-    const count = tasks.length - next.length;
+    let count = 0;
+    const next = tasks.map((task) => {
+      if (!(task.status === "done" && normalizeDate(task.completedDate || "") === displayDate)) return task;
+      count += 1;
+      return { ...task, status: "deleted", updatedAt: new Date().toISOString() };
+    });
     if (!count) {
       showToast("本日没有可清除的完成任务");
       return;
     }
     writeTasks(next);
-    showToast(`已清除 ${count} 条完成记录`);
-    window.location.reload();
+    showToast(`已清除 ${count} 条完成记录（可从设置恢复）`);
+    dispatchRefresh();
+  }
+
+  function restoreDeletedTasks() {
+    const tasks = readTasks();
+    let count = 0;
+    const next = tasks.map((task) => {
+      if (task.status !== "deleted") return task;
+      count += 1;
+      return { ...task, status: "done", updatedAt: new Date().toISOString() };
+    });
+    if (!count) { showToast("没有已删除的任务可恢复"); return; }
+    writeTasks(next);
+    showToast(`已恢复 ${count} 条删除任务`);
+    dispatchRefresh();
+  }
+
+  function purgeDeletedTasks() {
+    const tasks = readTasks();
+    const before = tasks.length;
+    const next = tasks.filter((task) => task.status !== "deleted");
+    const count = before - next.length;
+    if (!count) { showToast("没有已删除的任务"); return; }
+    writeTasks(next);
+    showToast(`已永久清除 ${count} 条任务`);
+    dispatchRefresh();
   }
 
   function applyProjectBulkRename() {
@@ -1113,9 +1160,8 @@
     writeTasks(next);
     writeUpgrade({ selectedProjectTaskIds: [] });
     showToast(`已更新 ${count} 条任务归属`);
-    window.location.reload();
+    dispatchRefresh();
   }
-
   function saveModelSettings() {
     const patch = {
       baseUrl: normalizeText(document.getElementById("settings-base-url")?.value) || DEFAULT_SETTINGS.baseUrl,

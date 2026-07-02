@@ -695,6 +695,19 @@
     });
   }
 
+
+  function bindSampleHeroClose() {
+    const btn = document.getElementById("close-sample-hero-btn");
+    const hero = document.getElementById("sample-hero");
+    if (!btn || !hero) return;
+    const dismissed = window.localStorage.getItem("sample-hero-dismissed");
+    if (dismissed) hero.classList.add("hidden");
+    btn.addEventListener("click", () => {
+      hero.classList.add("hidden");
+      window.localStorage.setItem("sample-hero-dismissed", "1");
+    });
+  }
+
   function init() {
     ensureSettingsDefaults();
     mergeLiveDataIntoStorage();
@@ -703,6 +716,7 @@
     bindSettingsIntegration();
     bindUnifiedImportExport();
     bindScrollTop();
+    bindSampleHeroClose();
     bindSettingsSave();
     bindAccessControl();
     applyAccessControl();
