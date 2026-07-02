@@ -1,0 +1,73 @@
+{
+  "name": "daily-report-sync",
+  "type": "workspace-file-contract",
+  "app": "日报记录台",
+  "service": {
+    "domain": "example-daily-report.pages.dev",
+    "origin": "https://example-daily-report.pages.dev",
+    "skillRoute": "https://example-daily-report.pages.dev/skill-sync.md",
+    "mcpRoute": "https://example-daily-report.pages.dev/mcp-sync.json",
+    "trustedIps": []
+  },
+  "storage": {
+    "targetFile": "data/live-data.js",
+    "globalName": "window.LIVE_DATA",
+    "mergeKey": [
+      "date",
+      "project",
+      "title",
+      "dueDate"
+    ]
+  },
+  "interface": {
+    "name": "mergeDailyReportTasks",
+    "description": "将任务数组合并并写入日报数据文件",
+    "input": {
+      "type": "array",
+      "itemFields": {
+        "date": "YYYY-MM-DD",
+        "dueDate": "YYYY-MM-DD",
+        "completedDate": "YYYY-MM-DD | 空字符串",
+        "project": "string",
+        "title": "string",
+        "status": [
+          "planned",
+          "pending",
+          "done",
+          "delayed",
+          "paused",
+          "abandoned"
+        ],
+        "priority": [
+          "高",
+          "中",
+          "普通"
+        ],
+        "category": [
+          "需求沟通",
+          "产品设计",
+          "数据处理",
+          "测试上线",
+          "会议出差",
+          "招聘培训",
+          "行政协同",
+          "AI探索",
+          "综合事务",
+          "休假"
+        ],
+        "plan": "string",
+        "notes": "string"
+      }
+    },
+    "output": {
+      "ok": true,
+      "mergedCount": 0,
+      "targetFile": "data/live-data.js"
+    }
+  },
+  "notes": [
+    "这是给 AI、本地自动化或代理使用的写入规范，不是在线公网写接口。",
+    "如果部署在静态站点，页面只负责展示；真正写入仍由本地代理或 AI 在仓库内更新数据文件。",
+    "推荐先读取路由说明，再按 mergeKey 执行追加或更新。"
+  ]
+}

@@ -1,0 +1,370 @@
+﻿.today-head-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.danger-lite {
+  border-color: #fecaca;
+  color: #b91c1c;
+  background: #fff5f5;
+}
+
+.project-manager,
+.plan-summary {
+  margin-top: 10px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 12px;
+  background: var(--card-soft);
+}
+
+.project-manager {
+  display: grid;
+  grid-template-columns: minmax(120px, auto) minmax(0, 1fr) auto auto;
+  gap: 8px;
+  align-items: center;
+}
+
+.project-manager-title {
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.entry-switches {
+  display: grid;
+  gap: 10px;
+}
+
+.entry-switch-row {
+  display: grid;
+  grid-template-columns: 76px 1fr;
+  gap: 10px;
+  align-items: center;
+}
+
+.entry-panel.hidden {
+  display: none !important;
+}
+
+.settings-form-triple {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.plan-summary {
+  display: grid;
+  gap: 10px;
+}
+
+.plan-group {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #fff;
+  overflow: hidden;
+}
+
+.plan-group-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  align-items: center;
+  padding: 10px 12px;
+  background: #f8fafc;
+  border-bottom: 1px solid var(--line);
+}
+
+.plan-group-title {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.plan-parent-list {
+  display: grid;
+  gap: 0;
+}
+
+.plan-parent {
+  padding: 10px 12px;
+  border-top: 1px dashed var(--line);
+}
+
+.plan-parent:first-child {
+  border-top: 0;
+}
+
+.plan-parent-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #374151;
+}
+
+.plan-item-list {
+  margin-top: 8px;
+  display: grid;
+  gap: 8px;
+}
+
+.plan-item {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
+  align-items: start;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 10px;
+  background: #fcfcfd;
+}
+
+.plan-item-main {
+  display: grid;
+  gap: 6px;
+}
+
+.plan-item-title {
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.5;
+}
+
+.plan-item-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.plan-item-note {
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.task-check {
+  width: 18px;
+  height: 18px;
+  accent-color: #111827;
+}
+
+.task-card-selectable {
+  grid-template-columns: auto 1fr;
+}
+
+.task-select-wrap {
+  padding-top: 2px;
+}
+
+.upgrade-project-head,
+.upgrade-project-line {
+  grid-template-columns: 42px 88px minmax(0, 1fr) 88px 72px;
+}
+
+@media (max-width: 1080px) {
+  .project-manager,
+  .settings-form-triple {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .entry-switch-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 760px) {
+  .today-head-actions,
+  .project-manager,
+  .settings-form-triple {
+    grid-template-columns: 1fr;
+  }
+
+  .project-manager {
+    display: grid;
+  }
+
+  .plan-item {
+    grid-template-columns: 1fr;
+  }
+
+  .upgrade-project-head {
+    display: none;
+  }
+
+  .upgrade-project-line {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Plan summary OKR-style enhancements */
+.plan-parent-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.plan-parent-progress {
+  font-size: 12px;
+  color: var(--muted);
+  background: var(--accent-soft);
+  padding: 1px 8px;
+  border-radius: 8px;
+}
+.plan-item-overdue {
+  border-left: 3px solid var(--red);
+  background: var(--red-soft);
+}
+.plan-item-overdue .plan-item-title {
+  color: var(--red);
+  font-weight: 500;
+}
+.overdue-dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--red);
+  margin-right: 4px;
+  vertical-align: middle;
+}
+.completed-overdue-dot {
+  background: var(--yellow);
+}
+.plan-item-result {
+  font-size: 12px;
+  color: var(--green);
+  margin-top: 2px;
+}
+.plan-item-overdue .plan-item-result {
+  color: var(--red);
+}
+/* Plan summary - OKR style */
+.plan-group {
+  margin-bottom: 16px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--card);
+}
+.plan-group-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--accent-soft);
+}
+.plan-group-title {
+  font-size: 16px;
+  font-weight: 700;
+}
+.plan-parent {
+  margin-bottom: 10px;
+}
+.plan-parent-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 6px;
+  padding-left: 8px;
+  border-left: 3px solid var(--accent);
+}
+.plan-parent-name {
+  flex: 1;
+}
+.plan-parent-progress {
+  font-size: 12px;
+  color: var(--muted);
+  background: var(--accent-soft);
+  padding: 1px 8px;
+  border-radius: 8px;
+}
+.plan-item-list {
+  padding-left: 14px;
+}
+.plan-item {
+  padding: 6px 0;
+  border-bottom: 1px dashed var(--line);
+}
+.plan-item:last-child {
+  border-bottom: none;
+}
+.plan-item-overdue {
+  border-left: 3px solid var(--red);
+  background: var(--red-soft);
+  padding-left: 8px;
+  border-radius: 4px;
+}
+.plan-item-title {
+  font-size: 13px;
+  line-height: 1.5;
+}
+.plan-item-overdue .plan-item-title {
+  color: var(--red);
+  font-weight: 500;
+}
+.plan-item-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 3px;
+}
+.plan-item-result {
+  font-size: 12px;
+  color: var(--green);
+  margin-top: 2px;
+}
+.plan-item-note {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 1px;
+}
+.overdue-dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--red);
+  margin-right: 4px;
+  vertical-align: middle;
+}
+.completed-overdue-dot {
+  background: var(--yellow);
+}
+.entry-switches {
+  margin-bottom: 12px;
+}
+.entry-switch-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+.entry-switch-row .section-title {
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  min-width: 64px;
+}
+.seg {
+  display: flex;
+  gap: 2px;
+  background: var(--accent-soft);
+  padding: 2px;
+  border-radius: 10px;
+}
+.seg-btn {
+  padding: 4px 12px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.seg-btn:hover {
+  background: rgba(17, 24, 39, 0.06);
+}
+.seg-btn.active {
+  background: var(--card);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+  font-weight: 600;
+}

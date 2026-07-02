@@ -1,4 +1,4 @@
-const PRIMARY_STORAGE_KEY = "daily-report-workbench-v8";
+﻿const PRIMARY_STORAGE_KEY = "daily-report-workbench-v8";
 const LEGACY_STORAGE_KEYS = [
   "daily-report-workbench-v7",
   "daily-report-workbench-v6",
@@ -41,7 +41,8 @@ const SCOPE_OPTIONS = [
 
 const SUMMARY_MODE_OPTIONS = [
   { value: "date", label: "按日期" },
-  { value: "project", label: "按项目" }
+  { value: "project", label: "按项目" },
+  { value: "plan", label: "按计划" }
 ];
 
 const DEFAULT_SETTINGS = {
@@ -574,13 +575,19 @@ function renderSummary() {
   const tasks = getFilteredSummaryTasks(range);
   const overview = summarizeTasks(tasks, range);
 
-  els.summaryStats.innerHTML = renderStatsChips(overview, true);
   els.projectSummary.classList.toggle("hidden", state.summaryMode !== "project");
   els.timelineRoot.classList.toggle("hidden", state.summaryMode !== "date");
 
+  const planSummaryEl = document.getElementById("plan-summary");
+  if (planSummaryEl) planSummaryEl.classList.toggle("hidden", state.summaryMode !== "plan");
+
   if (state.summaryMode === "project") {
+    els.summaryStats.innerHTML = renderStatsChips(overview, true);
     renderProjectSummary(tasks, range);
+  } else if (state.summaryMode === "plan") {
+    // plan summary stats are rendered by upgrade-v3.js
   } else {
+    els.summaryStats.innerHTML = renderStatsChips(overview, true);
     renderSummaryTimeline(tasks, range);
   }
 }
@@ -627,12 +634,16 @@ function renderProjectSummary(tasks, range) {
             .map((day) => {
               const lines = day.items
                 .map((item) => {
+                  const displayStatus = getEntryDisplayStatus(item.task, item.date);
+                  const overdueTag = displayStatus === "delayed" || (item.task.status === "done" && isOverdueCompletionTask(item.task))
+                    ? badge("逾期", "overdue-tag") : "";
                   return `
                     <div class="project-line">
                       <span class="project-line-title">${escapeHtml(item.task.title)}</span>
                       <span class="project-line-meta">
-                        ${statusBadge(getEntryDisplayStatus(item.task, item.date))}
+                        ${statusBadge(displayStatus)}
                         ${priorityBadge(item.task.priority)}
+                        ${overdueTag}
                       </span>
                     </div>
                   `;
@@ -737,9 +748,15 @@ function renderTaskCard(task, options = {}) {
 }
 
 function renderTaskDates(task) {
-  const items = [badge(`录入 ${task.date}`, "date")];
-  if (task.dueDate) items.push(badge(`计划 ${task.dueDate}`, "due"));
-  if (task.completedDate) items.push(badge(`完成 ${task.completedDate}`, "completed"));
+  const date = task.date || "";
+  const dueDate = task.dueDate || date;
+  const completedDate = task.completedDate || "";
+  if (completedDate && date && dueDate && date === dueDate && date === completedDate) {
+    return badge(`完成 ${completedDate}`, "completed");
+  }
+  const items = [badge(`录入 ${date}`, "date")];
+  if (dueDate && dueDate !== date) items.push(badge(`计划 ${dueDate}`, "due"));
+  if (completedDate) items.push(badge(`完成 ${completedDate}`, "completed"));
   return items.join("");
 }
 
@@ -974,7 +991,9 @@ function openEntryModal(keepForm = false) {
 
 function closeEntryModal() {
   els.entryModal.classList.add("hidden");
+  document.body.classList.remove("modal-open");
   syncModalLock();
+  state.editingTaskId = null;
 }
 
 function openSettingsModal() {
@@ -994,10 +1013,13 @@ function fillSettingsForm() {
   els.settingsModel.value = state.settings.model || DEFAULT_SETTINGS.model;
   els.settingsTemperature.value = state.settings.temperature ?? DEFAULT_SETTINGS.temperature;
   els.settingsPrompt.value = state.settings.prompt || DEFAULT_SETTINGS.prompt;
+  if (window.__fillAccessSettingsForm) window.__fillAccessSettingsForm();
 }
 
 function saveSettings() {
+  const storedSettings = readJson(SETTINGS_KEY) || {};
   state.settings = {
+    ...storedSettings,
     baseUrl: normalizeText(els.settingsBaseUrl.value) || DEFAULT_SETTINGS.baseUrl,
     apiKey: normalizeText(els.settingsApiKey.value),
     model: normalizeText(els.settingsModel.value) || DEFAULT_SETTINGS.model,
@@ -1006,6 +1028,7 @@ function saveSettings() {
   };
 
   window.localStorage.setItem(SETTINGS_KEY, JSON.stringify(state.settings));
+  if (window.__refreshIntegrationDocs) window.__refreshIntegrationDocs();
   closeSettingsModal();
   showToast("设置已保存");
 }
@@ -2201,8 +2224,6 @@ function extractProject(text) {
   const existing = projects.find((project) => lower.includes(project.toLowerCase()));
   if (existing) return existing;
 
-  if (/popeyes/i.test(cleaned)) return "POPEYES";
-
   const match = cleaned.match(/^([\u4e00-\u9fa5A-Za-z0-9-]{2,12}?)(?:项目|客户|抖音|社媒|数据|需求|问题|反馈|组织|汇报|出差|专业版|样式|投放|活动|采集|脚本|代码|方案|流程|材料|统计|架构|体验官|团购)/);
   if (match) return normalizeProjectName(match[1]);
 
@@ -2215,7 +2236,6 @@ function extractProject(text) {
 function normalizeProjectName(value) {
   const text = normalizeText(value).replace(/[；;，,、]+$/g, "");
   if (!text) return "";
-  if (text.toLowerCase() === "popeyes") return "POPEYES";
 
   const existing = uniqueProjects().find((item) => item.toLowerCase() === text.toLowerCase());
   return existing || text;
@@ -2604,3 +2624,4 @@ function escapeRegex(value) {
 function camelize(value) {
   return value.replace(/-([a-z])/g, (_, char) => char.toUpperCase());
 }
+

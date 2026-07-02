@@ -9,11 +9,24 @@
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="./styles.css" />
   <link rel="stylesheet" href="./enhancements.css" />
+  <link rel="stylesheet" href="./upgrade-v3.css" />
 </head>
 <body>
+  <div class="auth-overlay hidden" id="auth-overlay">
+    <div class="auth-card" role="dialog" aria-modal="true" aria-labelledby="auth-title">
+      <div class="auth-badge">受保护访问</div>
+      <h1 id="auth-title">请输入访问密码</h1>
+      <div class="auth-note" id="auth-status">正在检测免密 IP...</div>
+      <input type="password" id="auth-password-input" placeholder="输入访问密码" autocomplete="current-password" />
+      <div class="auth-actions">
+        <button type="button" class="mini-btn primary" id="auth-submit-btn">进入系统</button>
+      </div>
+    </div>
+  </div>
+
   <div class="app-shell">
     <header class="topbar">
-      <div class="brand">日报记录台</div>
+      <div class="brand" id="brand-title">日报记录台</div>
       <nav class="view-nav" id="view-nav" aria-label="页面切换">
         <button type="button" class="nav-btn active" data-view="today">今日页</button>
         <button type="button" class="nav-btn" data-view="summary">汇总页</button>
@@ -23,14 +36,24 @@
         <button type="button" class="text-btn" id="unified-import-btn">导入</button>
         <button type="button" class="text-btn" id="unified-export-btn">导出</button>
         <input type="file" id="import-any-input" accept=".json,.xlsx,.xls" hidden />
+        <button type="button" id="export-excel-btn" hidden aria-hidden="true">旧版导出 Excel</button>
+        <button type="button" id="export-json-btn" hidden aria-hidden="true">旧版导出 JSON</button>
+        <input type="file" id="import-json-input" accept=".json" hidden />
+        <input type="file" id="import-excel-input" accept=".xlsx,.xls" hidden />
       </div>
     </header>
+
+    <section class="sample-hero" id="sample-hero">
+      <div class="sample-hero-badge" id="sample-hero-badge">公开样例</div>
+      <h1 class="sample-hero-title" id="sample-hero-title">可直接复制部署的日报模板</h1>
+      <p class="sample-hero-text" id="sample-hero-text">这里展示的是脱敏样例数据，方便公开预览、复制仓库和验证功能；真实工作记录建议复制后单独部署私人版。</p>
+    </section>
 
     <section class="calendar-card" id="calendar-card">
       <div class="calendar-top">
         <div class="calendar-title-wrap">
           <div class="calendar-title" id="calendar-title"></div>
-          <div class="calendar-legend">颜色：绿色已完成，黄色当日新增未完成，浅红色当前逾期；右下角：当前逾期/完成/逾期完成/新增</div>
+          <div class="calendar-legend">颜色：绿色已完成，黄色当日未完成，浅红色当前逾期；右下角：当前逾期/完成/逾期完成/新增</div>
         </div>
         <div class="calendar-actions">
           <button type="button" class="mini-btn icon-mini-btn" id="calendar-prev-btn" aria-label="上一页">&lt;</button>
@@ -49,6 +72,11 @@
         <div class="today-head">
           <h2 id="today-title">今日记录</h2>
           <div class="today-stats" id="today-stats"></div>
+          <div class="today-head-actions">
+            <button type="button" class="mini-btn" id="undo-submit-btn">撤回上次新增</button>
+            <button type="button" class="mini-btn" id="restore-day-done-btn">恢复本日完成</button>
+            <button type="button" class="mini-btn danger-lite" id="clear-day-done-btn">清除本日完成</button>
+          </div>
         </div>
 
         <div class="today-columns">
@@ -76,51 +104,86 @@
           <select id="status-filter"></select>
           <select id="priority-filter"></select>
           <button type="button" class="mini-btn" id="generate-summary-btn">生成摘要</button>
-          <button type="button" class="mini-btn" id="ai-summary-btn">AI总结</button>
-          <button type="button" class="mini-btn" id="ppt-prompt-btn">PPT提示词</button>
+          <button type="button" class="mini-btn" id="ai-summary-btn">AI 总结</button>
+          <button type="button" class="mini-btn" id="ppt-prompt-btn">PPT 提示词</button>
         </div>
 
         <textarea id="summary-output" rows="3" class="summary-output" placeholder="这里显示当前汇总范围的摘要"></textarea>
         <div class="today-stats" id="summary-stats"></div>
+        <div class="project-manager hidden" id="project-manager">
+          <div class="project-manager-title">按项目维护</div>
+          <input type="text" id="project-bulk-input" placeholder="输入新的项目名称" />
+          <button type="button" class="mini-btn" id="project-bulk-apply-btn">批量改归属</button>
+          <button type="button" class="mini-btn" id="project-bulk-clear-btn">清空选择</button>
+        </div>
         <div class="project-summary hidden" id="project-summary"></div>
+        <div class="plan-summary hidden" id="plan-summary"></div>
         <div class="timeline" id="timeline-root"></div>
       </section>
     </main>
   </div>
 
+  <button type="button" class="fab-btn secondary hidden" id="scroll-top-btn" aria-label="返回顶部">🚀</button>
   <button type="button" class="fab-btn" id="open-entry-btn" aria-label="新增任务">+</button>
 
   <div class="modal-overlay hidden" id="entry-modal">
     <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="entry-modal-title">
       <div class="modal-head">
         <div>
-          <h3 id="entry-modal-title">新增任务 / 补录</h3>
-          <div class="modal-subtitle" id="entry-modal-subtitle">支持一句话录入、按规则批量写入，也支持逐项填写</div>
+          <h3 id="entry-modal-title">新增记录</h3>
+          <div class="modal-subtitle" id="entry-modal-subtitle">支持一句话、按规则批量、字段录入，也支持独立录入计划</div>
         </div>
         <button type="button" class="icon-btn" id="close-entry-btn" aria-label="关闭">×</button>
       </div>
 
       <div class="modal-body">
-        <section class="modal-section">
+        <section class="modal-section entry-switches">
+          <div class="entry-switch-row">
+            <div class="section-title">录入类型</div>
+            <div class="seg" id="entry-kind-seg">
+              <button type="button" class="seg-btn active" data-kind="task">已完成情况</button>
+              <button type="button" class="seg-btn" data-kind="plan">计划录入</button>
+            </div>
+          </div>
+          <div class="entry-switch-row">
+            <div class="section-title">录入方式</div>
+            <div class="seg" id="entry-tab-seg">
+              <button type="button" class="seg-btn" data-tab="quick">一句话</button>
+              <button type="button" class="seg-btn active" data-tab="batch">按规则批量写入</button>
+              <button type="button" class="seg-btn" data-tab="field">字段录入</button>
+            </div>
+          </div>
+          <div class="entry-switch-row hidden" id="plan-scope-row">
+            <div class="section-title">计划周期</div>
+            <div class="seg" id="plan-scope-seg">
+              <button type="button" class="seg-btn" data-plan-scope="day">按日</button>
+              <button type="button" class="seg-btn active" data-plan-scope="month">按月</button>
+              <button type="button" class="seg-btn" data-plan-scope="quarter">按季度</button>
+              <button type="button" class="seg-btn" data-plan-scope="year">按年</button>
+            </div>
+          </div>
+        </section>
+
+        <section class="modal-section entry-panel" data-entry-tab="quick">
           <div class="section-title">一句话录入</div>
           <div class="quick-row">
-            <input id="quick-line-input" type="text" placeholder="示例：今天 POPEYES 数据核对 已完成 高" />
+            <input id="quick-line-input" type="text" placeholder="示例：今天 北辰家居 客户问题整理 已完成 高" />
             <button type="button" class="mini-btn" id="quick-line-btn">解析到表单</button>
             <button type="button" class="mini-btn" id="quick-save-btn">直接写入</button>
             <button type="button" class="mini-btn primary" id="quick-ai-btn">AI 解析</button>
           </div>
         </section>
 
-        <section class="modal-section">
+        <section class="modal-section entry-panel" data-entry-tab="batch">
           <div class="section-title">按规则批量写入</div>
-          <textarea id="batch-input" rows="10" placeholder="支持两种常用格式：&#10;1. 每行一条：今天 欧派 已完成 问题处理 高&#10;2. 日期 + 编号列表：&#10;2026/6/4&#10;1、欧派项目反馈问题处理；&#10;2、德克士投放配置需求PRD更新；"></textarea>
+          <textarea id="batch-input" rows="10" placeholder="任务示例：&#10;2026/6/4&#10;1、北辰家居客户问题处理；&#10;2、云帆数据月报更新；&#10;&#10;计划示例：&#10;6月OKR&#10;客户项目：&#10;URL检测上线测试；&#10;产品优化：&#10;AI行动工单评审；"></textarea>
           <div class="batch-actions">
             <button type="button" class="mini-btn" id="batch-local-btn">按规则写入</button>
             <button type="button" class="mini-btn primary" id="batch-ai-btn">AI 批量写入</button>
           </div>
         </section>
 
-        <section class="modal-section">
+        <section class="modal-section entry-panel hidden" data-entry-tab="field">
           <div class="section-title">字段录入</div>
           <form id="task-form" class="entry-form">
             <input type="date" id="task-date" title="录入日期" required />
@@ -138,6 +201,21 @@
               <button type="submit" class="mini-btn primary" id="submit-task-btn">保存记录</button>
             </div>
           </form>
+
+          <form id="plan-form" class="entry-form hidden">
+            <input type="date" id="plan-date" title="计划日期" required />
+            <input type="text" id="plan-project" placeholder="计划集 / 项目，例如 6月OKR" required />
+            <input type="text" id="plan-parent-title" placeholder="父目标，例如 客户项目" required />
+            <input type="text" id="plan-title" placeholder="子计划项" required />
+            <select id="plan-status"></select>
+            <select id="plan-priority"></select>
+            <input type="text" id="plan-result" placeholder="完成情况（可选）" />
+            <input type="text" id="plan-notes" placeholder="备注（可选）" />
+            <div class="entry-actions">
+              <button type="button" class="mini-btn" id="reset-plan-form-btn">清空</button>
+              <button type="submit" class="mini-btn primary" id="submit-plan-btn">保存计划</button>
+            </div>
+          </form>
         </section>
       </div>
     </div>
@@ -148,7 +226,7 @@
       <div class="modal-head">
         <div>
           <h3 id="settings-title">设置</h3>
-          <div class="modal-subtitle">配置自动录入 Prompt、自定义大模型、以及 Codex/QClaw 接入方式</div>
+          <div class="modal-subtitle">配置自动录入 Prompt、自定义大模型、访问控制，以及 Skill / MCP 下载入口</div>
         </div>
         <button type="button" class="icon-btn" id="close-settings-btn" aria-label="关闭">×</button>
       </div>
@@ -163,6 +241,9 @@
             <input type="number" id="settings-temperature" min="0" max="2" step="0.1" placeholder="temperature，默认 0.2" />
           </div>
           <div class="settings-note">按 OpenAI 兼容接口调用：POST /chat/completions</div>
+          <div class="batch-actions">
+            <button type="button" class="mini-btn" id="save-model-settings-btn">保存模型设置</button>
+          </div>
         </section>
 
         <section class="modal-section">
@@ -171,17 +252,63 @@
           <div class="batch-actions">
             <button type="button" class="mini-btn" id="copy-prompt-btn">复制 Prompt</button>
             <button type="button" class="mini-btn" id="test-model-btn">测试模型</button>
-            <button type="button" class="mini-btn primary" id="save-settings-btn">保存设置</button>
+            <button type="button" class="mini-btn primary" id="save-prompt-settings-btn">保存 Prompt</button>
+            <button type="button" class="hidden" id="save-settings-btn" aria-hidden="true" tabindex="-1">兼容旧版</button>
           </div>
         </section>
 
         <section class="modal-section">
-          <div class="section-title">Codex / QClaw 接入</div>
-          <textarea id="integration-skill-link" rows="5" readonly placeholder="这里显示 skill 使用说明"></textarea>
-          <textarea id="integration-mcp-link" rows="5" readonly placeholder="这里显示 MCP 写入规范"></textarea>
+          <div class="section-title">访问控制</div>
+          <div class="settings-form access-settings-form">
+            <label class="settings-switch">
+              <input type="checkbox" id="settings-access-enabled" />
+              <span>启用访问密码</span>
+            </label>
+            <input type="password" id="settings-access-password" placeholder="访问密码（留空则保持当前密码）" />
+            <textarea id="settings-trusted-ips" rows="4" placeholder="免密 IP：每行一个，或使用 ; 分隔"></textarea>
+          </div>
+          <div class="settings-note">公开样例默认不预置密码、IP 或私人域名；复制为私人版后可自行填写。</div>
           <div class="batch-actions">
-            <button type="button" class="mini-btn" id="copy-skill-link-btn">复制 Skill 说明</button>
-            <button type="button" class="mini-btn" id="copy-mcp-link-btn">复制 MCP 规范</button>
+            <button type="button" class="mini-btn" id="save-access-settings-btn">保存访问控制</button>
+          </div>
+        </section>
+
+        <section class="modal-section">
+          <div class="section-title">录入偏好</div>
+          <div class="settings-form settings-form-triple">
+            <select id="settings-default-entry-tab">
+              <option value="batch">默认按规则批量写入</option>
+              <option value="quick">默认一句话</option>
+              <option value="field">默认字段录入</option>
+            </select>
+            <select id="settings-default-task-status">
+              <option value="done">任务默认已完成</option>
+              <option value="pending">任务默认进行中</option>
+              <option value="planned">任务默认待办</option>
+            </select>
+            <select id="settings-default-plan-scope">
+              <option value="month">计划默认按月</option>
+              <option value="day">计划默认按日</option>
+              <option value="quarter">计划默认按季度</option>
+              <option value="year">计划默认按年</option>
+            </select>
+          </div>
+          <div class="batch-actions">
+            <button type="button" class="mini-btn" id="save-entry-settings-btn">保存录入偏好</button>
+          </div>
+        </section>
+
+        <section class="modal-section">
+          <div class="section-title">Skill / MCP</div>
+          <div class="integration-download-list">
+            <button type="button" class="integration-download-item" id="download-skill-btn">
+              <span class="integration-download-title">下载 Skill</span>
+              <span class="integration-download-note">用于 Codex / QClaw 直接按规范写入日报数据</span>
+            </button>
+            <button type="button" class="integration-download-item" id="download-mcp-btn">
+              <span class="integration-download-title">下载 MCP</span>
+              <span class="integration-download-note">提供接口、字段、合并规则与目标文件说明</span>
+            </button>
           </div>
         </section>
       </div>
@@ -215,5 +342,6 @@
   <script src="./app.js"></script>
   <script src="./enhancements.js"></script>
   <script src="./enhancements-v2.js"></script>
+  <script src="./upgrade-v3.js"></script>
 </body>
 </html>

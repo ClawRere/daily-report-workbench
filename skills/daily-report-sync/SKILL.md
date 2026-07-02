@@ -1,22 +1,26 @@
 ---
 name: daily-report-sync
-description: Write or update daily report task records for the local daily-report app. Use when the user asks Codex/QClaw to directly record completed work, plans,补录 tasks, or batch-write structured daily tasks into the report system. Target file is data/live-data.js, and records must follow the app schema.
+description: 将工作日报任务直接写入日报记录台的数据文件，适用于 Codex、QClaw 或本地自动化代理。
 ---
 
 # Daily Report Sync
 
-Write task data into `data/live-data.js` so the daily report app can load it directly.
+把任务写入 `data/live-data.js`，供日报记录台页面直接加载。
 
-## Target
+## 服务信息
 
-Always update:
-- `data/live-data.js`
+- 页面域名：`example-daily-report.pages.dev`
+- 访问地址：`https://example-daily-report.pages.dev`
+- Skill 路由：`https://example-daily-report.pages.dev/skill-sync.md`
+- MCP 路由：`https://example-daily-report.pages.dev/mcp-sync.json`
+- 默认免密 IP：`未预置`
+- 数据文件：`data/live-data.js`
+- 数据对象：`window.LIVE_DATA`
 
-Do not write user-entered tasks only into browser local storage when the request is for shared/project data sync.
+## 记录字段
 
-## Record Schema
+每条任务对象包含：
 
-Each task object should contain:
 - `id`
 - `date`
 - `dueDate`
@@ -30,9 +34,10 @@ Each task object should contain:
 - `notes`
 - `source`
 
-## Allowed Values
+## 允许值
 
-`status`:
+`status`：
+
 - `planned`
 - `pending`
 - `done`
@@ -40,12 +45,14 @@ Each task object should contain:
 - `paused`
 - `abandoned`
 
-`priority`:
+`priority`：
+
 - `高`
 - `中`
 - `普通`
 
-Recommended categories:
+推荐 `category`：
+
 - `需求沟通`
 - `产品设计`
 - `数据处理`
@@ -57,22 +64,22 @@ Recommended categories:
 - `综合事务`
 - `休假`
 
-## Merge Rule
+## 合并规则
 
-Treat this as the logical unique key:
+逻辑唯一键：
+
 - `date + project + title + dueDate`
 
-If a matching record exists, update it.
-If no match exists, append a new record.
+若命中唯一键，则更新原记录。
+若未命中唯一键，则新增记录。
 
-## Source Value
+## 推荐 source
 
-Use:
-- `source: "skill-sync"`
+- `skill-sync`
 
-## File Format
+## 文件格式
 
-Keep file content as:
+保持文件结构为：
 
 ```js
 window.LIVE_DATA = [
@@ -80,26 +87,29 @@ window.LIVE_DATA = [
 ];
 ```
 
-## Workflow
+## 工作流
 
-1. Read current `data/live-data.js`.
-2. Parse existing `window.LIVE_DATA` array.
-3. Normalize incoming records.
-4. Merge by the unique key.
-5. Rewrite `data/live-data.js`.
-6. Preserve ASCII JS syntax and valid UTF-8 file content.
+1. 读取当前 `data/live-data.js`
+2. 解析 `window.LIVE_DATA` 数组
+3. 将输入任务标准化
+4. 按唯一键合并
+5. 回写 `data/live-data.js`
+6. 如有部署流程，再触发仓库提交或自动部署
 
-## Input Examples
+## 输入示例
 
-Single line:
-- `2026-06-22 | POPEYES | 数据核对 | done | 高 | 数据处理 | 完成6月核对 | 无`
+单条：
 
-Batch lines:
-- `2026-06-22 | 欧派 | 客户问题处理 | done | 高 | 综合事务 | |`
-- `2026-06-22 | 德克士 | PRD更新 | pending | 中 | 产品设计 | 明天完成 | 等确认`
+- `2026-06-22 | 北辰家居 | 客户问题处理 | done | 高 | 综合事务 | 已同步周会 | 无`
 
-## Notes
+批量：
 
-If `completedDate` is missing and `status=done`, set it to `date`.
-If `dueDate` is missing, default it to `date`.
-If `plan` or `notes` is missing, use empty string.
+- `2026-06-22 | 星桥餐饮 | PRD更新 | pending | 中 | 产品设计 | 明天完成 | 等确认`
+- `2026-06-22 | 云帆数据 | 月报核对 | done | 中 | 数据处理 | | 已同步`
+
+## 备注
+
+- 若 `completedDate` 缺失且 `status=done`，自动补为 `date`
+- 若 `dueDate` 缺失，自动补为 `date`
+- 若 `plan` 或 `notes` 缺失，使用空字符串
+- 如需最新域名、接口地址或运行配置，请优先读取在线 `skill-sync.md`
