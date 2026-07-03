@@ -737,7 +737,7 @@ function renderTaskCard(task, options = {}) {
   const actions = showActions ? buildTaskActions(task).join("") : "";
 
   return `
-    <article class="task-card task-${tone} ${showActions ? "" : "task-card-summary"}">
+    <article class="task-card task-${tone} ${showActions ? "" : "task-card-summary"} ${task.restored ? "task-restored" : ""}">
       <div class="task-main">
         <div class="task-title">${escapeHtml(task.title)}</div>
         <div class="task-meta">${meta.join("")}</div>
@@ -829,11 +829,8 @@ function editTask(taskId) {
 function deleteTask(taskId) {
   const task = findTask(taskId);
   if (!task) return;
-
-  if (!window.confirm(`确认删除“${task.title}”？`)) return;
-
-  state.tasks = state.tasks.filter((item) => item.id !== taskId);
-  renderProjectSuggestions();
+  if (!window.confirm(`确认删除"${task.title}"？（可从批量恢复恢复）`)) return;
+  state.tasks = state.tasks.map((item) => item.id !== taskId ? item : { ...item, status: "deleted", originalStatus: item.status, updatedAt: new Date().toISOString() });
   render();
   showToast("任务已删除");
 }

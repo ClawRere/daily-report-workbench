@@ -826,7 +826,7 @@
         <article class="project-card">
           <div class="project-card-head">
             <label class="project-check-all">
-              <input type="checkbox" class="project-check-all-input" data-project="${escapeHtml(group.project)}" />
+              <input type="checkbox" class="project-check-all-input" data-project="${escapeHtml(group.project)}" ${group.days.flatMap(d => d.items).every(item => selectedIds.has(item.task.id)) ? "checked" : ""} />
               <span class="project-name">${escapeHtml(group.project)}</span>
             </label>
             <div class="project-stats">${renderTaskStatsChips(group.stats, true)}</div>
@@ -1122,14 +1122,14 @@
       else inRange = taskDate.slice(0, 4) === range.start.slice(0, 4);
       if (!inRange) return task;
       count += 1;
-      return { ...task, status: "deleted", updatedAt: new Date().toISOString() };
+      return { ...task, status: "deleted", originalStatus: task.status, updatedAt: new Date().toISOString() };
     });
     if (!count) {
-      showToast(`${range.label}没有可清除的任务`);
+      showToast(`${range.label}没有可删除的任务`);
       return;
     }
     writeTasks(next);
-    showToast(`已清除 ${range.label} ${count} 条任务`);
+    showToast(`已删除 ${range.label} ${count} 条任务`);
     dispatchRefresh();
   }
 
@@ -1139,11 +1139,12 @@
     const next = tasks.map((task) => {
       if (task.status !== "deleted") return task;
       count += 1;
-      return { ...task, status: "done", updatedAt: new Date().toISOString() };
+      const restored = task.originalStatus || "pending";
+      return { ...task, status: restored, originalStatus: undefined, restored: true, updatedAt: new Date().toISOString() };
     });
     if (!count) { showToast("没有已删除的任务可恢复"); return; }
     writeTasks(next);
-    showToast(`已恢复 ${count} 条删除任务`);
+    showToast(`已恢复 ${count} 条任务`);
     dispatchRefresh();
   }
 
@@ -1175,11 +1176,12 @@
       else inRange = taskDate.slice(0, 4) === range.start.slice(0, 4);
       if (!inRange) return task;
       count += 1;
-      return { ...task, status: "pending", completedDate: "", updatedAt: new Date().toISOString() };
+      const restored = task.originalStatus || "pending";
+      return { ...task, status: restored, originalStatus: undefined, restored: true, updatedAt: new Date().toISOString() };
     });
     if (!count) { showToast("当前范围内没有已删除的任务"); return; }
     writeTasks(next);
-    showToast(`已恢复 ${count} 条任务为待办`);
+    showToast(`已恢复 ${count} 条任务`);
     dispatchRefresh();
   }
 
@@ -1267,11 +1269,16 @@
 
   function fillProjectBulkSelect() {
     const selectEl = document.getElementById("project-bulk-select");
+    const inputEl = document.getElementById("project-bulk-input");
     if (!selectEl) return;
     const tasks = readTasks();
     const projects = [...new Set(tasks.filter(t => t.status !== "deleted").map(t => t.project).filter(Boolean))].sort();
-    const currentVal = selectEl.value;
-    selectEl.innerHTML = '<option value="">选择目标项目</option>' + projects.map(p => `<option value="${escapeHtml(p)}"${p === currentVal ? ' selected' : ''}>${escapeHtml(p)}</option>`).join("");
+    selectEl.innerHTML = `<option value="">选择目标项目</option>` + projects.map(p => `<option value="${escapeHtml(p)}"${p === currentVal ? ` selected` : ""}>${escapeHtml(p)}</option>`).join("");
+    if (inputEl) inputEl.disabled = Boolean(selectEl.value);
+    if (!selectEl._bound) {
+      selectEl._bound = true;
+      selectEl.addEventListener("change", () => { if (inputEl) inputEl.disabled = Boolean(selectEl.value); });
+    }
   }
 
   function renderTaskStatsChips(stats, includeProjects) {

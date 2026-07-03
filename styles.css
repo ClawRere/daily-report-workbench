@@ -1207,3 +1207,13 @@ button:focus {
     100% { transform: translateY(0); }
   }
 }
+.task-restored {
+  opacity: 0.65;
+  border-left: 3px solid var(--yellow);
+}
+.task-restored .task-title::after {
+  content: " (已恢复)";
+  font-size: 11px;
+  color: var(--yellow);
+  margin-left: 4px;
+}
