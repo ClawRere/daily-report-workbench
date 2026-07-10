@@ -1840,25 +1840,33 @@ function exportExcel() {
     return;
   }
 
-  const rows = state.tasks.map((task) => ({
-    录入日期: task.date,
-    计划完成日期: task.dueDate || "",
-    实际完成日期: task.completedDate || "",
-    项目: task.project,
-    任务事项: task.title,
-    完成情况: statusLabel(getDisplayStatus(task, todayStr())),
-    等级: task.priority,
-    分类: task.category,
-    计划说明: task.plan,
-    备注: task.notes,
-    来源: task.source
-  }));
-
+  const rows = buildContentExportRows(state.tasks);
   const workbook = XLSX.utils.book_new();
-  const worksheet = XLSX.utils.json_to_sheet(rows);
-  XLSX.utils.book_append_sheet(workbook, worksheet, "任务清单");
+  const worksheet = XLSX.utils.json_to_sheet(rows.length ? rows : [{ 日期: "", 内容: "暂无数据" }]);
+  worksheet["!cols"] = [{ wch: 14 }, { wch: 80 }];
+  XLSX.utils.book_append_sheet(workbook, worksheet, "任务内容");
   XLSX.writeFile(workbook, `日报记录-${todayStr()}.xlsx`);
   showToast("Excel 已导出");
+}
+
+function buildContentExportRows(tasks) {
+  const grouped = new Map();
+
+  (Array.isArray(tasks) ? tasks : []).forEach((task) => {
+    const date = normalizeDate(task.date || todayStr()).replace(/-/g, "/");
+    const title = cleanupTitle(task.title || "");
+    if (!title) return;
+    const items = grouped.get(date) || [];
+    items.push(title);
+    grouped.set(date, items);
+  });
+
+  return [...grouped.entries()]
+    .sort((a, b) => (a[0] < b[0] ? 1 : -1))
+    .map(([date, titles]) => ({
+      日期: date,
+      内容: titles.map((title, index) => `${index + 1}、${title}；`).join("\n")
+    }));
 }
 
 async function importJson(event) {
@@ -1924,6 +1932,39 @@ function parseExcelRows(rows) {
   if (!Array.isArray(rows) || !rows.length) return [];
 
   const header = rows[0].map((cell) => normalizeText(cell));
+  const contentDateIndex = findHeaderIndex(header, ["日期", "录入日期"]);
+  const contentIndex = findHeaderIndex(header, ["内容", "正文", "任务内容"]);
+  if (contentDateIndex !== -1 && contentIndex !== -1) {
+    return rows.slice(1).flatMap((row) => {
+      const date = normalizeExcelDate(row[contentDateIndex]) || normalizeDate(row[contentDateIndex]);
+      const content = normalizeText(row[contentIndex]);
+      if (!date || !content) return [];
+
+      return content
+        .split(/\r?\n+/)
+        .map((line) => normalizeText(line).replace(/^\d+[、.．]\s*/, "").replace(/[；;]\s*$/, ""))
+        .filter(Boolean)
+        .map((title) =>
+          normalizeTask({
+            id: createId(),
+            date,
+            dueDate: date,
+            completedDate: defaultStatusValueByDate(date) === "done" ? date : "",
+            project: extractProject(title),
+            title: cleanupTitle(title),
+            status: normalizeStatus(defaultStatusValueByDate(date)),
+            priority: normalizePriority(inferPriority(title)),
+            category: normalizeCategory(inferCategory(title)),
+            plan: "",
+            notes: "",
+            source: "excel-import",
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+          })
+        );
+    });
+  }
+
   const hasHeader = header.some((cell) => cell.includes("日期")) && header.some((cell) => cell.includes("任务"));
 
   if (hasHeader) {
@@ -2625,4 +2666,5 @@ function escapeRegex(value) {
 function camelize(value) {
   return value.replace(/-([a-z])/g, (_, char) => char.toUpperCase());
 }
+
 
